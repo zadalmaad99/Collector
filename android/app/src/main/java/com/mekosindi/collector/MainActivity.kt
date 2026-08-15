@@ -7,9 +7,12 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceError
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity() {
@@ -28,6 +31,16 @@ class MainActivity : AppCompatActivity() {
         swipeRefresh = findViewById(R.id.swipeRefresh)
         progressBar = findViewById(R.id.progressBar)
 
+        // The app targets edge-to-edge (Android 15+ enforces it), so the WebView
+        // would otherwise draw under the status bar / nav bar / notch. Pad the
+        // root view by the system bar insets instead, like native apps do.
+        val rootLayout = findViewById<FrameLayout>(R.id.rootLayout)
+        ViewCompat.setOnApplyWindowInsetsListener(rootLayout) { view, windowInsets ->
+            val bars = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            windowInsets
+        }
+
         with(webView.settings) {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -38,6 +51,9 @@ class MainActivity : AppCompatActivity() {
             setSupportZoom(false)
             builtInZoomControls = false
             mediaPlaybackRequiresUserGesture = false
+            // Lets the web page detect it's running inside this native wrapper
+            // (e.g. to hide its own "install app" banner, which is redundant here).
+            userAgentString = "$userAgentString CollectorNativeApp/1.0"
         }
 
         webView.webViewClient = object : WebViewClient() {

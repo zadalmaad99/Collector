@@ -10442,6 +10442,10 @@ function exportAuditCSV() {
         || navigator.standalone === true;
   }
 
+  function isNativeApp() {
+    return /CollectorNativeApp/.test(navigator.userAgent);
+  }
+
   function isIos() {
     return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   }
@@ -10454,14 +10458,14 @@ function exportAuditCSV() {
   }
 
   function showBtn() {
-    if (isStandalone()) return;
+    if (isStandalone() || isNativeApp()) return;
     if (wasDismissedRecently()) return;
     btn.classList.add('pwa-visible');
   }
 
   /* ── show immediately on every page load ── */
   document.addEventListener('DOMContentLoaded', function(){
-    if (!isStandalone() && !wasDismissedRecently()) {
+    if (!isStandalone() && !isNativeApp() && !wasDismissedRecently()) {
       btn.classList.add('pwa-visible');
     }
   });
@@ -10514,7 +10518,7 @@ function exportAuditCSV() {
 
   /* ── iOS: show on page load ── */
   window.addEventListener('load', function(){
-    if (isStandalone()) return;
+    if (isStandalone() || isNativeApp()) return;
     if (isIos()) {
       showBtn();
       return;
