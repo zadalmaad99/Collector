@@ -9412,19 +9412,26 @@ async function rbacLogin() {
 
     // 3. Store session
     _rbacUser = { uid, email, role };
-    sessionStorage.setItem(RBAC_SESSION_KEY, JSON.stringify(_rbacUser));
     clearLoginAttempts();
     touchSession();
     try {
       var remEl = document.getElementById('rbac-remember');
       if (remEl && remEl.checked) {
+        // "Remember me" → keep the session in localStorage so it survives
+        // closing the app/browser entirely, not just a page reload.
+        localStorage.setItem(RBAC_SESSION_KEY, JSON.stringify(_rbacUser));
+        sessionStorage.removeItem(RBAC_SESSION_KEY);
         localStorage.setItem('picco_saved_email', email);
         localStorage.setItem('picco_remember_me', '1');
       } else {
+        sessionStorage.setItem(RBAC_SESSION_KEY, JSON.stringify(_rbacUser));
+        localStorage.removeItem(RBAC_SESSION_KEY);
         localStorage.removeItem('picco_saved_email');
         localStorage.removeItem('picco_remember_me');
       }
-    } catch(_e) {}
+    } catch(_e) {
+      sessionStorage.setItem(RBAC_SESSION_KEY, JSON.stringify(_rbacUser));
+    }
 
     // 4. Show app
     document.getElementById('rbac-gate').style.display = 'none';
@@ -9475,6 +9482,7 @@ window.rbacForgotPassword = rbacForgotPassword;
 async function rbacLogout() {
   await firebase.auth().signOut();
   sessionStorage.removeItem(RBAC_SESSION_KEY);
+  localStorage.removeItem(RBAC_SESSION_KEY);
   _rbacUser = null;
   document.getElementById('rbac-gate').style.display  = 'flex';
   document.getElementById('rbac-user').value  = '';
@@ -9489,7 +9497,7 @@ window.rbacLogout = rbacLogout;
 
 // ── Restore session on reload ─────────────────────────────────
 (function restoreSession() {
-  const saved = sessionStorage.getItem(RBAC_SESSION_KEY);
+  const saved = localStorage.getItem(RBAC_SESSION_KEY) || sessionStorage.getItem(RBAC_SESSION_KEY);
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
